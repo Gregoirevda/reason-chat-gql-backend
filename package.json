@@ -7,7 +7,6 @@
   "license": "MIT",
   "main": "dist/index.js",
   "engines": {
-    "node": "~6.9.1",
     "npm": ">=3.10.0"
   },
   "scripts": {
@@ -32,15 +31,21 @@
     "eslint"
   ],
   "dependencies": {
+    "apollo-server": "^2.0.0-rc.2",
     "babel-cli": "^6.26.0",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "body-parser": "^1.18.2",
+    "cors": "^2.8.4",
     "express": "^4.16.2",
+    "graphql": "^0.13.2",
+    "graphql-subscriptions": "^0.5.8",
     "morgan": "^1.9.0",
     "pug": "^2.0.0-beta11",
-    "rimraf": "^2.6.2"
+    "rimraf": "^2.6.2",
+    "subscriptions-transport-ws": "^0.9.11",
+    "uuid": "^3.2.1"
   },
   "devDependencies": {
     "babel-eslint": "^8.0.3",

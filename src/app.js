@@ -1,40 +1,70 @@
-import express from 'express';
-import path from 'path';
-import logger from 'morgan';
-import bodyParser from 'body-parser';
-import routes from './routes';
+import uuid from 'uuid/v1';
+import { PubSub } from 'graphql-subscriptions';
+import { ApolloServer, gql } from 'apollo-server';
 
-const app = express();
-app.disable('x-powered-by');
+const pubsub = new PubSub();
+const MESSAGE_ADDED = 'message_added';
+const users = [];
+const messages = [];
 
-// View engine setup
-app.set('views', path.join(__dirname, '../views'));
-app.set('view engine', 'pug');
+// Type definitions define the "shape" of your data and specify
+// which ways the data can be fetched from the GraphQL server.
+export const typeDefs = gql`
+  type User {
+    id: ID!
+    name: String!
+  }
 
-app.use(logger('dev', {
-  skip: () => app.get('env') === 'test'
-}));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, '../public')));
+  type Message {
+    id: ID!
+    text: String!
+    author: User!
+  }
 
-// Routes
-app.use('/', routes);
+  type Query {
+    messages: [Message!]!
+  }
 
-// Catch 404 and forward to error handler
-app.use((req, res, next) => {
-  const err = new Error('Not Found');
-  err.status = 404;
-  next(err);
-});
+  type Mutation {
+    addMessage(userId: ID!, text: String!): Message!
+  }
 
-// Error handler
-app.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
-  res
-    .status(err.status || 500)
-    .render('error', {
-      message: err.message
-    });
-});
+  type Subscription {
+    messageAdded: Message
+  }
+`;
 
-export default app;
+// Resolvers define the technique for fetching the types in the
+// schema.  We'll retrieve books from the "books" array above.
+const resolvers = {
+  Query: {
+    messages: () => messages,
+  },
+  Mutation: {
+    addMessage: (_, _newMessage) => {
+      const newMessage = {
+        id: uuid(),
+        ..._newMessage
+      };
+      messages.push(newMessage);
+      pubsub.publish(MESSAGE_ADDED, {
+        messageAdded: newMessage
+      });
+      return newMessage;
+    }
+  },
+  Subscription: {
+    messageAdded: {
+      subscribe: () => pubsub.asyncIterator(MESSAGE_ADDED)
+    }
+  },
+  Message: {
+    author: (_, {userId}) => users.find(user => user.id === userId)
+  }
+};
+
+// In the most basic sense, the ApolloServer can be started
+// by passing type definitions (typeDefs) and the resolvers
+// responsible for fetching the data for those types.
+export default new ApolloServer({ typeDefs, resolvers });
+
