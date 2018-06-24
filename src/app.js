@@ -75,10 +75,7 @@ const resolvers = {
     }
   },
   Message: {
-    author: ({userId}) => {
-      console.log("ID", userId);
-     return  users.find(user => user.id === userId)
-    }
+    author: ({userId}) => users.find(user => user.id === userId)
   }
 };
 
