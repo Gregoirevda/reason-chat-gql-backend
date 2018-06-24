@@ -27,6 +27,7 @@ export const typeDefs = gql`
 
   type Mutation {
     addMessage(userId: ID!, text: String!): Message!
+    addUser(name: String!): User!
   }
 
   type Subscription {
@@ -41,16 +42,31 @@ const resolvers = {
     messages: () => messages,
   },
   Mutation: {
-    addMessage: (_, _newMessage) => {
+    addMessage: (_, {userId, text}) => {
+      if(!users.some(user => user.id === userId)) {
+        throw new Error("Can't add message. userId not found. Please add user before");
+      }
+
       const newMessage = {
         id: uuid(),
-        ..._newMessage
+        userId,
+        text
       };
+      
       messages.push(newMessage);
       pubsub.publish(MESSAGE_ADDED, {
         messageAdded: newMessage
       });
       return newMessage;
+    },
+    addUser: (_, {name}) => {
+      const newUser = {
+        id: uuid(),
+        name
+      };
+
+      users.push(newUser); 
+      return newUser;
     }
   },
   Subscription: {
@@ -59,7 +75,10 @@ const resolvers = {
     }
   },
   Message: {
-    author: (_, {userId}) => users.find(user => user.id === userId)
+    author: ({userId}) => {
+      console.log("ID", userId);
+     return  users.find(user => user.id === userId)
+    }
   }
 };
 
